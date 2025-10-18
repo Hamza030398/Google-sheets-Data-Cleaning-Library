@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 16px;
+        background: #f9fafc;
+        color: #333;
+      }
+
+      h3 {
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      label {
+        font-weight: 600;
+        margin-top: 8px;
+        display: block;
+      }
+
+      input[type="text"],
+      select,
+      textarea {
+        width: 100%;
+        margin: 6px 0;
+        padding: 6px 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box; /* Crucial for full width padding */
+      }
+
+      .note {
+        font-size: 12px;
+        color: #555;
+        margin-bottom: 8px;
+      }
+
+      .flag-section {
+        margin-top: 12px;
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 6px;
+        background: #fff;
+      }
+
+      .flag-section h4 {
+        margin: 0 0 6px 0;
+        font-size: 14px;
+      }
+
+      .flag-box {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .flag-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+      }
+
+      .flag-item label {
+        font-weight: normal;
+      }
+
+      button {
+        width: 100%;
+        padding: 8px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 4px;
+        background: #0078d7;
+        color: #fff;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.3s;
+      }
+
+      button:hover {
+        background: #005fa3;
+      }
+
+      .preview-table {
+        border-collapse: collapse;
+        margin-top: 10px;
+        width: 100%;
+      }
+
+      .preview-table td {
+        border: 1px solid #ccc;
+        padding: 4px;
+        font-size: 13px;
+      }
+
+      .options {
+        border: 1px solid #ddd;
+        background: #fff;
+        padding: 10px;
+        border-radius: 6px;
+        margin-top: 10px;
+      }
+      
+      .message-box {
+        background: #f0fff4;
+        border: 1px solid #38c172;
+        color: #1f9d55;
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+        text-align: center;
+      }
+      
+      .error-box {
+        background: #ffe6e6;
+        border: 1px solid #ff4d4d;
+        color: #cc0000;
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+      }
+      
+      #saveInputGroup {
+          margin-top: 10px;
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 6px;
+          background: #f0f0f0;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>🧩 Advanced Regex Tool</h3>
+    <div id="messageContainer"></div>
+
+    <p style="font-size:12px; color:#555; background:#f8f9fa; padding:6px; border-left:3px solid #4285f4;">
+    ⚙️ <b>Note:</b> This tool only applies to the <b>currently selected cells</b> in your active sheet when you click “Run Regex”.
+    </p>
+
+    <label>Saved Patterns:</label>
+    <select id="savedPatterns" onchange="loadSaved()">
+      <option value="">-- Select saved pattern --</option>
+    </select>
+
+    <label>Pattern:</label>
+    <input id="pattern" type="text" placeholder="Enter regex (e.g. \\d{4}-\\d{2}-\\d{2})">
+    <div class="note">💡 Need help crafting your expression? You can seek AI assistance to tailor one for your specific use case.</div>
+
+    <div class="flag-section">
+      <h4>Flags (Modifiers):</h4>
+      <div class="flag-box">
+        <div class="flag-item">
+          <input type="checkbox" id="flagG" checked>
+          <label for="flagG"><b>g</b> – Global: find all matches</label>
+        </div>
+        <div class="flag-item">
+          <input type="checkbox" id="flagI">
+          <label for="flagI"><b>i</b> – Ignore case</label>
+        </div>
+        <div class="flag-item">
+          <input type="checkbox" id="flagM">
+          <label for="flagM"><b>m</b> – Multiline: treat each line separately</label>
+        </div>
+      </div>
+    </div>
+
+    <label>Action:</label>
+    <select id="action" onchange="toggleReplace()">
+      <option value="extract">Extract</option>
+      <option value="replace">Replace</option>
+      <option value="test">Test</option>
+    </select>
+
+    <div id="replaceDiv" style="display:none;">
+      <label>Replacement Text:</label>
+      <input id="replacement" type="text" placeholder="Replacement string">
+    </div>
+
+    <label>Output Mode:</label>
+    <select id="outputMode">
+      <option value="replace">Replace in place</option>
+      <option value="newColumn">Write to new column</option>
+      <option value="newSheet">Write to new sheet</option>
+    </select>
+
+    <div class="options">
+      <label><input type="checkbox" id="preview"> Preview before applying</label>
+    </div>
+
+    <button onclick="run()">Run Regex</button>
+    <button onclick="showSaveInput()" style="background:#555;">Save Pattern</button>
+    
+    <div id="saveInputGroup" style="display:none;">
+        <label for="saveName">Name for Pattern:</label>
+        <input id="saveName" type="text" placeholder="e.g. 'Dates YYYY-MM-DD'">
+        <button onclick="savePattern()" style="background:#32CD32; margin-top:5px;">Confirm Save</button>
+    </div>
+
+
+    <div id="previewDiv"></div>
+
+    <script>
+      // Run on load
+      google.script.run.withSuccessHandler(populateSaved).loadPatterns();
+
+      function showMessage(type, message) {
+        const container = document.getElementById('messageContainer');
+        const boxClass = type === 'success' ? 'message-box' : 'error-box';
+        const icon = type === 'success' ? '✅' : '❌';
+        container.innerHTML = `<div class="${boxClass}">${icon} ${message}</div>`;
+        setTimeout(() => container.innerHTML = '', 5000); // Clear after 5 seconds
+      }
+
+      function populateSaved(patterns) {
+        const select = document.getElementById('savedPatterns');
+        // Clear previous options except the default
+        select.innerHTML = '<option value="">-- Select saved pattern --</option>'; 
+        for (let key in patterns) {
+          const opt = document.createElement('option');
+          opt.value = key;
+          opt.textContent = key;
+          select.appendChild(opt);
+        }
+      }
+
+      function loadSaved() {
+        const select = document.getElementById('savedPatterns');
+        const name = select.value;
+        if (!name) return;
+        
+        // Call loadPatterns and handle the result to populate fields
+        google.script.run.withSuccessHandler((patterns) => {
+          const p = patterns[name];
+          if (p) {
+            document.getElementById('pattern').value = p.pattern || '';
+            document.getElementById('action').value = p.action || 'extract';
+            document.getElementById('replacement').value = p.replacement || '';
+            
+            const flags = p.flags || '';
+            document.getElementById('flagI').checked = flags.includes('i');
+            document.getElementById('flagM').checked = flags.includes('m');
+            document.getElementById('flagG').checked = flags.includes('g');
+            
+            toggleReplace(); // Update visibility of replacement field
+            showMessage('success', `Pattern '${name}' loaded.`);
+          }
+        }).loadPatterns();
+      }
+
+      function toggleReplace() {
+        const show = document.getElementById('action').value === 'replace';
+        document.getElementById('replaceDiv').style.display = show ? 'block' : 'none';
+      }
+
+      function getFlags() {
+        let flags = '';
+        if (document.getElementById('flagG').checked) flags += 'g';
+        if (document.getElementById('flagI').checked) flags += 'i';
+        if (document.getElementById('flagM').checked) flags += 'm';
+        return flags;
+      }
+
+      function buildConfig(isPreview) {
+          return {
+            pattern: document.getElementById('pattern').value,
+            action: document.getElementById('action').value,
+            replacement: document.getElementById('replacement').value,
+            flags: getFlags(),
+            preview: isPreview,
+            outputMode: document.getElementById('outputMode').value,
+          };
+      }
+      
+      function handleRunResponse(result) {
+          if (result && result.error) {
+              showMessage('error', result.message);
+              document.getElementById('previewDiv').innerHTML = ''; // Clear preview on error
+          } else if (result === 'done') {
+              showMessage('success', '✅ Regex Applied!');
+              document.getElementById('previewDiv').innerHTML = ''; // Clear preview after execution
+          } else if (Array.isArray(result)) {
+              // This is a preview result
+              showPreview(result);
+          } else {
+              showMessage('error', 'An unknown error occurred during execution.');
+          }
+      }
+
+
+      function run() {
+        if (!document.getElementById('pattern').value) {
+            showMessage('error', 'Please enter a Regex Pattern.');
+            return;
+        }
+        
+        const config = buildConfig(document.getElementById('preview').checked);
+        
+        // Pass the config object and handle the response with a single handler
+        google.script.run.withSuccessHandler(handleRunResponse).runRegexAction(config);
+      }
+
+      function showPreview(data) {
+        let html = '<h4>🔍 Preview Results</h4><table class="preview-table">';
+        
+        // Limit preview to a few rows to prevent sidebar slowdown
+        const displayRows = data.slice(0, 10); 
+        
+        displayRows.forEach(row => {
+          html += '<tr>' + row.map(c => `<td>${c}</td>`).join('') + '</tr>';
+        });
+        html += '</table><p class="note">Showing first 10 rows of result.</p><br>';
+        html += '<button onclick="confirmRun()">Apply Changes</button>';
+        
+        document.getElementById('previewDiv').innerHTML = html;
+      }
+
+      function confirmRun() {
+        const config = buildConfig(false); // Force preview=false for final run
+        // Run the final execution and show success/error message
+        google.script.run.withSuccessHandler(handleRunResponse).runRegexAction(config);
+      }
+      
+      function showSaveInput() {
+          const saveGroup = document.getElementById('saveInputGroup');
+          saveGroup.style.display = saveGroup.style.display === 'none' ? 'block' : 'none';
+          document.getElementById('saveName').focus();
+      }
+
+      function savePattern() {
+        const name = document.getElementById('saveName').value.trim();
+        if (!name) {
+             showMessage('error', 'Pattern name cannot be empty.');
+             return;
+        }
+        if (!document.getElementById('pattern').value) {
+            showMessage('error', 'Please enter a Regex Pattern to save.');
+            return;
+        }
+        
+        google.script.run
+          .withSuccessHandler(() => {
+              showMessage('success', `💾 Pattern '${name}' saved!`);
+              document.getElementById('saveName').value = '';
+              document.getElementById('saveInputGroup').style.display = 'none';
+              // Reload patterns into the select dropdown
+              google.script.run.withSuccessHandler(populateSaved).loadPatterns(); 
+          })
+          .savePattern(
+            name,
+            document.getElementById('pattern').value,
+            document.getElementById('action').value,
+            document.getElementById('replacement').value,
+            getFlags()
+          );
+      }
+    </script>
+  </body>
+</html>
