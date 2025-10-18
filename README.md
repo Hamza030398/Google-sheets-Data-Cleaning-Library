@@ -1,6 +1,6 @@
 # Google-sheets-Data-Cleaning-Library
 
-🧹 Google Sheets Data Cleaning Library - [Link]([url](https://script.google.com/d/1lDfzhXxf-ezKGIRcX6gW2Vm4AWDsolEIkLDy1bgOsHuDhUUZhl0pX3YA/edit?usp=sharing))
+🧹 Google Sheets Data Cleaning Library - [Link](https://script.google.com/d/1lDfzhXxf-ezKGIRcX6gW2Vm4AWDsolEIkLDy1bgOsHuDhUUZhl0pX3YA/edit?usp=sharing)
 
 A modular Google Apps Script library that automates post-ingestion data cleanup, normalization, and regex-based analysis directly inside Google Sheets.
 
