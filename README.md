@@ -16,6 +16,32 @@ A modular Google Apps Script library that automates post-ingestion data cleanup,
 
 🧱 Preview Mode — Review regex changes before applying.
 
+🧮 Comparison & Validation Tool
+
+A side-by-side data integrity validator that compares your cleaned sheet with its auto-generated backup.
+Designed to confirm that cleanup and normalization scripts have not unintentionally changed original data.
+
+✨ Features
+
+📊 Side-by-Side Comparison — Creates a new sheet pairing each column (Backup vs Current)
+
+🔴 Mismatch Highlighting — Flags only real data changes (ignores harmless numeric/date serial rounding)
+
+🟡 Structure Awareness — Moves and highlights new or missing rows/columns automatically
+
+⚖️ Tolerant Logic — Skips false positives for date/time or float differences (e.g., 0.999999 vs 1)
+
+🧩 UI Integrated — Appears as “Compare with Backup” under 🧹 Data Cleaning Tools menu
+
+🧠 Use Case
+
+Use this feature after running your cleanup or regex operations to validate that:
+
+No values were unintentionally altered
+
+Normalization scripts behaved deterministically
+
+Your dataset structure remains intact between versions
 🪶 UI Integrated Menu — Appears directly in Google Sheets toolbar.
 
 🧠 Who It Helps
